@@ -63,6 +63,8 @@ var (
 	cur int32
 )
 
+var transport *http.Transport
+
 type arrayFlags []string
 
 func (i *arrayFlags) String() string {
@@ -72,6 +74,19 @@ func (i *arrayFlags) String() string {
 func (i *arrayFlags) Set(value string) error {
 	*i = append(*i, value)
 	return nil
+}
+
+func init() {
+	proxyStr := "socks5://127.0.0.1:9050"
+	proxyURL, err := url.Parse(proxyStr)
+	if err != nil {
+		panic(err)
+	}
+
+	//adding the proxy settings to the Transport object
+	transport = &http.Transport{
+		Proxy: http.ProxyURL(proxyURL),
+	}
 }
 
 func main() {
@@ -165,7 +180,11 @@ func httpcall(url string, host string, data string, headers arrayFlags, s chan u
 	atomic.AddInt32(&cur, 1)
 
 	var param_joiner string
-	var client = new(http.Client)
+	//var client = new(http.Client)
+	//adding the Transport object to the http Client
+	client := &http.Client{
+		Transport: transport,
+	}
 
 	if strings.ContainsRune(url, '?') {
 		param_joiner = "&"
